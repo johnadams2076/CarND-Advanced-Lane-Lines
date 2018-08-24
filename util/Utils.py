@@ -1,17 +1,15 @@
-
 import numpy as np
 import cv2
-from util.sliding_window import fit_polynomial
 
-src = []
-dst = []
+from util.global_variables import GlobalVar
 
 
-def get_undistorted_image(img, objpoints, imgpoints):
+def get_undistorted_image(img):
     # Use cv2.calibrateCamera() and cv2.undistort()
     # Convert to grayscale
     grayscaleimage = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, grayscaleimage.shape[::-1], None, None)
+    obj_points, img_points, = GlobalVar().ret_calib_points()
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, grayscaleimage.shape[::-1], None, None)
     undist = cv2.undistort(img, mtx, dist, None, mtx)
     return undist
 
@@ -104,12 +102,48 @@ def apply_perspective(img):
 
 
 def find_lane_boundary(img):
-    fit_poly_img = fit_polynomial(img)
+
+    from util.sliding_window import fit_polynomial
+
+    if GlobalVar().get_idx() <= 0 or \
+            GlobalVar().get_left_fit().any() == (1 * GlobalVar().get_ploty() ** 2 + 1 * GlobalVar().get_ploty()) or \
+            GlobalVar().get_right_fit().any() == (1 * GlobalVar().get_ploty() ** 2 + 1 * GlobalVar().get_ploty()):
+        fit_poly_img, left_fitx, right_fitx = fit_polynomial(img)
+        GlobalVar().set_left_fit(left_fitx)
+        GlobalVar().set_right_fit(right_fitx)
+        GlobalVar().set_idx(GlobalVar().get_idx() + 1)
+    else:
+        from util.prev_poly import search_around_poly
+        fit_poly_img, left_fitx, right_fitx = search_around_poly(img, GlobalVar().get_left_fit(),  GlobalVar().get_right_fit())
+        GlobalVar().set_left_fit(left_fitx)
+        GlobalVar().set_right_fit(right_fitx)
     # win_center_img = find_window_centroids(img)
-    # around_poly_img = search_around_poly(img)
-    return fit_poly_img
+    return fit_poly_img, GlobalVar().get_left_fit(),  GlobalVar().get_right_fit()
 
 
 def get_curve_pos():
     # radius = measure_curvature_real(img, fitx, ploty)
     pass
+
+    # Read in the saved objpoints and imgpoints
+
+
+def plot_back_to_orig(left_fitx, right_fitx, ploty):
+    # Create an image to draw the lines on
+    warp_zero = np.zeros_like(GlobalVar().get_orig_image()).astype(np.uint8)
+    #color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+
+    #ploty = np.linspace(0, orig_image.shape[0] - 1, orig_image.shape[0])
+    # Recast the x and y points into usable format for cv2.fillPoly()
+    pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+    pts = np.hstack((pts_left, pts_right))
+
+    # Draw the lane onto the warped blank image
+    cv2.fillPoly(warp_zero, np.int_([pts]), (0, 255, 0))
+    Minv = cv2.getPerspectiveTransform(dst, src)
+    # Warp the blank back to original image space using inverse perspective matrix (Minv)
+    newwarp = cv2.warpPerspective(warp_zero, Minv, (GlobalVar().get_orig_image().shape[1], GlobalVar().get_orig_image().shape[0]))
+    # Combine the result with the original image
+    result = cv2.addWeighted(GlobalVar().get_orig_image(), 1, newwarp, 0.3, 0)
+    return result

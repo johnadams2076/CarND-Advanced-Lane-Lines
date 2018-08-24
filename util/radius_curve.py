@@ -1,5 +1,7 @@
 import numpy as np
 
+from util.global_variables import GlobalVar
+
 
 def generate_data(ym_per_pix, xm_per_pix):
     '''
@@ -33,7 +35,7 @@ def generate_data(ym_per_pix, xm_per_pix):
     return ploty, left_fit_cr, right_fit_cr
 
 
-def measure_curvature_real():
+def measure_curvature_real_dat(left_fit_cr, right_fit_cr):
     '''
     Calculates the curvature of polynomial functions in meters.
     '''
@@ -43,7 +45,10 @@ def measure_curvature_real():
 
     # Start by generating our fake example data
     # Make sure to feed in your real data instead in your project!
-    ploty, left_fit_cr, right_fit_cr = generate_data(ym_per_pix, xm_per_pix)
+    #ploty, left_fit_cr, right_fit_cr = generate_data(ym_per_pix, xm_per_pix)
+
+
+    ploty = np.linspace(0, GlobalVar.get_orig_image().shape[0] - 1, GlobalVar.get_orig_image().shape[0])
 
     # Define y-value where we want radius of curvature
     # We'll choose the maximum y-value, corresponding to the bottom of the image
@@ -58,7 +63,7 @@ def measure_curvature_real():
     return left_curverad, right_curverad
 
 
-def measure_curvature_real(ploty, left_fit_cr, right_fit_cr):
+def measure_curvature_real(image, left_fitx, right_fitx):
     '''
     Calculates the curvature of polynomial functions in meters.
     '''
@@ -68,7 +73,13 @@ def measure_curvature_real(ploty, left_fit_cr, right_fit_cr):
 
     # Start by generating our fake example data
     # Make sure to feed in your real data instead in your project!
-    ploty, left_fit_cr, right_fit_cr = generate_data(ym_per_pix, xm_per_pix)
+    #ploty, left_fit_cr, right_fit_cr = generate_data(ym_per_pix, xm_per_pix)
+
+    ploty = np.linspace(0, image.shape[0] - 1, image.shape[0])
+
+    left_fit_cr = np.polyfit(ploty * ym_per_pix, left_fitx * xm_per_pix, 2)
+    right_fit_cr = np.polyfit(ploty * ym_per_pix, right_fitx * xm_per_pix, 2)
+
 
     # Define y-value where we want radius of curvature
     # We'll choose the maximum y-value, corresponding to the bottom of the image

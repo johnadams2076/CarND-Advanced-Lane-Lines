@@ -3,32 +3,31 @@ import pickle
 import matplotlib.pyplot as plt
 import cv2
 from util.Utils import get_undistorted_image, get_threshold_binary_image, apply_perspective, find_lane_boundary
-#from computer_vision.sliding_window import fit_polynomial
+
+#image = cv2.imread('../test_images/test6.jpg')
+from util.global_variables import GlobalVar
 
 
 def pipeline(img):
-    # Read in the saved objpoints and imgpoints
-    dist_pickle = pickle.load(open("../util/cam_calibration_pickle.p", "rb"))
-    obj_points = dist_pickle["objpoints"]
-    img_points = dist_pickle["imgpoints"]
-
     # Get undistorted image
-    undistorted_img = get_undistorted_image(img, obj_points, img_points)
+
+    GlobalVar().set_orig_image(img)
+    undistorted_img = get_undistorted_image(img)
     thresh_bin_img = get_threshold_binary_image(undistorted_img)
     warped_img = apply_perspective(thresh_bin_img)
-    lane_boundary_image = find_lane_boundary(warped_img)
-
+    lane_boundary_image, left_fit, right_fit = find_lane_boundary(warped_img)
+    from util.radius_curve import measure_curvature_real
+    left_curverad, right_curverad = measure_curvature_real(img, left_fit, right_fit)
+    text = str(left_curverad) + "m" + str(right_curverad) + "m"
+    cv2.putText(lane_boundary_image, text, (0, 10), cv2.FONT_HERSHEY_SIMPLEX, 2,
+                (255, 255, 255), 3, lineType=cv2.LINE_AA)
+    # print(left_curverad, 'm', right_curverad, 'm', '\n')
     return lane_boundary_image
+
 
 # performs the camera calibration, image distortion correction and
 # returns the undistorted image
 
 
-image = cv2.imread('../test_images/straight_lines1.jpg')
-final_img = pipeline(image)
-cv2.imwrite("../output_images/straight_lines1_final_img.jpg", final_img)
-# Get object and image points for camera calibration input.
+#from util.Utils import get_undistorted_image, get_threshold_binary_image, apply_perspective, find_lane_boundary
 
-
-plt.imshow(final_img)
-plt.show()

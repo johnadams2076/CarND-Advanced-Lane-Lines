@@ -1,11 +1,13 @@
 import numpy as np
-import matplotlib.image as mpimg
+
 import matplotlib.pyplot as plt
 import cv2
 
-from computer_vision.computer_vision_lane_lines import image
+#
 # Load our image
 # binary_warped = mpimg.imread('../sobel/colorspaces/colorspace_test_images/warped-example.jpg')
+from util.Utils import plot_back_to_orig
+from util.global_variables import GlobalVar
 
 
 def find_lane_pixels(binary_warped):
@@ -98,6 +100,7 @@ def fit_polynomial(binary_warped):
     ### TO-DO: Fit a second order polynomial to each using `np.polyfit` ###
     left_fit = np.polyfit(lefty, leftx , 2)
     right_fit = np.polyfit(righty, rightx, 2)
+
     # Generate x and y values for plotting
     ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
     try:
@@ -106,42 +109,21 @@ def fit_polynomial(binary_warped):
     except TypeError:
         # Avoids an error if `left` and `right_fit` are still none or incorrect
         print('The function failed to fit a line!')
-        left_fitx = 1 * ploty ** 2 + 1 * ploty
-        right_fitx = 1 * ploty ** 2 + 1 * ploty
+        left_fitx = (1 * ploty ** 2 + 1 * ploty)
+        right_fitx = (1 * ploty ** 2 + 1 * ploty)
 
     ## Visualization ##
     # Colors in the left and right lane regions
-    out_img[lefty, leftx] = [255, 0, 0]
-    out_img[righty, rightx] = [0, 0, 255]
+    # out_img[lefty, leftx] = [255, 0, 0]
+    # out_img[righty, rightx] = [0, 0, 255]
+    #
+    # # Plots the left and right polynomials on the lane lines
+    # plt.plot(left_fitx, ploty, color='yellow')
+    # plt.plot(right_fitx, ploty, color='yellow')
 
-    # Plots the left and right polynomials on the lane lines
-    plt.plot(left_fitx, ploty, color='yellow')
-    plt.plot(right_fitx, ploty, color='yellow')
+    out_img = plot_back_to_orig(left_fitx, right_fitx, ploty)
+    return out_img, left_fitx, right_fitx
 
-    plot_back_to_orig(left_fitx, right_fitx, ploty, out_img)
-    return out_img
-
-
-def plot_back_to_orig(left_fitx, right_fitx, ploty, out_img):
-    # Create an image to draw the lines on
-    global src, dst
-    warp_zero = np.zeros_like(out_img).astype(np.uint8)
-    color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
-
-    # Recast the x and y points into usable format for cv2.fillPoly()
-    pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
-    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
-    pts = np.hstack((pts_left, pts_right))
-
-    # Draw the lane onto the warped blank image
-    cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
-
-    Minv = cv2.getPerspectiveTransform(dst, src)
-    # Warp the blank back to original image space using inverse perspective matrix (Minv)
-    newwarp = cv2.warpPerspective(color_warp, Minv, (image.out_img[1], image.out_img[0]))
-    # Combine the result with the original image
-    result = cv2.addWeighted(image, 1, newwarp, 0.3, 0)
-    plt.imshow(result)
 # out_img = fit_polynomial(binary_warped)
 #
 # plt.imshow(out_img)
