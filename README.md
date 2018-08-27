@@ -26,7 +26,7 @@ The goals / steps of this project are the following:
 [image3]: ./output_images/test1_binary_output.jpg "Binary Example"
 [image4]: ./output_images/straight_lines1_warped_img.jpg "Warp Example"
 [image5]: ./output_images/straight_lines1_final_img.jpg "Fit Visual"
-[image6]: ./output_images/project_video_output.jpg "Output"
+[image6]: ./output_images/project_video_output_Moment.jpg "Output"
 [video1]: ./project_video_output.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
