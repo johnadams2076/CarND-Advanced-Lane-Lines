@@ -1,3 +1,4 @@
+import collections
 import pickle
 
 
@@ -16,6 +17,11 @@ def singleton(cls):
 class GlobalVar:
 
     @staticmethod
+    def calculate_vals():
+        pass
+
+
+    @staticmethod
     def ret_calib_points():
 
         # Read in the saved objpoints and imgpoints
@@ -23,7 +29,6 @@ class GlobalVar:
         obj_points = dist_pickle["objpoints"]
         img_points = dist_pickle["imgpoints"]
         return obj_points, img_points
-
 
     def __init__(self):
         self.idx = 0
@@ -33,6 +38,16 @@ class GlobalVar:
         self.src = []
         self.dst = []
         self.orig_image = []
+        self.offset = 0
+        self.left_lines = collections.deque(maxlen=25)
+        self.right_lines = collections.deque(maxlen=25)
+        self.line_detected = collections.deque(maxlen=10)
+
+    def set_line_detected(self, line_detected):
+        self.line_detected = line_detected
+
+    def get_line_detected(self):
+        return self.line_detected
 
     def set_idx(self, idx):
         self.idx = idx
@@ -76,5 +91,9 @@ class GlobalVar:
     def get_orig_image(self):
         return self.orig_image
 
+    def set_offset(self, offset):
+        self.offset = offset
 
-instance = singleton(GlobalVar)
+    def get_offset(self):
+        return self.offset
+

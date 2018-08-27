@@ -94,31 +94,36 @@ def apply_color_transform(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
 
 def apply_perspective(img):
     global src, dst
-    src = np.float32([[200, img.shape[0]], [600, 450], [700, 450], [1150, img.shape[0]]])
+    src = np.float32([[200, img.shape[0]],[600, 450], [700, 450], [1150, img.shape[0]]])
     dst = np.float32([[350, img.shape[0] ], [350, 0], [950, 0], [950, img.shape[0]]])
     M = cv2.getPerspectiveTransform(src, dst)
     warped = cv2.warpPerspective(img, M, (img.shape[1], img.shape[0]), flags=cv2.INTER_NEAREST)
     return warped
 
 
+def is_lane_detected():
+    ret_bool = False
+
+    if (GlobalVar().get_idx() % GlobalVar().get_line_detected().maxlen) == 0:
+        line_detected = GlobalVar().get_line_detected()
+        for line_bool in line_detected:
+            ret_bool |= line_bool
+    return ret_bool
+
+
 def find_lane_boundary(img):
 
     from util.sliding_window import fit_polynomial
 
-    if GlobalVar().get_idx() <= 0 or \
-            GlobalVar().get_left_fit().any() == (1 * GlobalVar().get_ploty() ** 2 + 1 * GlobalVar().get_ploty()) or \
-            GlobalVar().get_right_fit().any() == (1 * GlobalVar().get_ploty() ** 2 + 1 * GlobalVar().get_ploty()):
-        fit_poly_img, left_fitx, right_fitx = fit_polynomial(img)
-        GlobalVar().set_left_fit(left_fitx)
-        GlobalVar().set_right_fit(right_fitx)
-        GlobalVar().set_idx(GlobalVar().get_idx() + 1)
+    if GlobalVar().get_idx() <= 0 & (not is_lane_detected()):
+        left_fit, right_fit, left_fitx, right_fitx , leftx, lefty, rightx, righty = fit_polynomial(img)
     else:
         from util.prev_poly import search_around_poly
-        fit_poly_img, left_fitx, right_fitx = search_around_poly(img, GlobalVar().get_left_fit(),  GlobalVar().get_right_fit())
-        GlobalVar().set_left_fit(left_fitx)
-        GlobalVar().set_right_fit(right_fitx)
+        left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty = search_around_poly(img, GlobalVar().get_left_fit(),  GlobalVar().get_right_fit())
+    GlobalVar().set_idx(GlobalVar().get_idx() + 1)
+
     # win_center_img = find_window_centroids(img)
-    return fit_poly_img, GlobalVar().get_left_fit(),  GlobalVar().get_right_fit()
+    return GlobalVar().get_left_fit(),  GlobalVar().get_right_fit(), left_fitx, right_fitx, leftx, lefty, rightx, righty
 
 
 def get_curve_pos():

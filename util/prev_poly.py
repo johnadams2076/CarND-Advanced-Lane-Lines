@@ -14,6 +14,7 @@ from util.Utils import plot_back_to_orig
 from util.global_variables import GlobalVar
 
 
+
 def fit_poly(img_shape, leftx, lefty, rightx, righty):
     ### TO-DO: Fit a second order polynomial to each with np.polyfit() ###
     left_fit = np.polyfit(lefty, leftx, 2)
@@ -31,7 +32,7 @@ def fit_poly(img_shape, leftx, lefty, rightx, righty):
         left_fitx = (1 * ploty ** 2 + 1 * ploty)
         right_fitx = (1 * ploty ** 2 + 1 * ploty)
 
-    return left_fitx, right_fitx, ploty
+    return left_fit, right_fit, left_fitx, right_fitx, ploty
 
 
 def search_around_poly(binary_warped, left_fit, right_fit):
@@ -65,44 +66,45 @@ def search_around_poly(binary_warped, left_fit, right_fit):
     if (not ((leftx.size <= 0 or lefty.size <= 0 or rightx.size <= 0 or righty.size <= 0 ))):
 
         # Fit new polynomials
-        left_fitx, right_fitx, ploty = fit_poly(binary_warped.shape, leftx, lefty, rightx, righty)
+        left_fit, right_fit, left_fitx, right_fitx, ploty = fit_poly(binary_warped.shape, leftx, lefty, rightx, righty)
 
 
         ## Visualization ##
         # Create an image to draw on and an image to show the selection window
-        out_img = np.dstack((binary_warped, binary_warped, binary_warped)) * 255
-        window_img = np.zeros_like(out_img)
-        # Color in left and right line pixels
-        out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
-        out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
-
-        # Generate a polygon to illustrate the search window area
-        # And recast the x and y points into usable format for cv2.fillPoly()
-        left_line_window1 = np.array([np.transpose(np.vstack([left_fitx - margin, ploty]))])
-        left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([left_fitx + margin,
-                                                                        ploty])))])
-        left_line_pts = np.hstack((left_line_window1, left_line_window2))
-        right_line_window1 = np.array([np.transpose(np.vstack([right_fitx - margin, ploty]))])
-        right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([right_fitx + margin,
-                                                                         ploty])))])
-        right_line_pts = np.hstack((right_line_window1, right_line_window2))
-
-        # Draw the lane onto the warped blank image
-        cv2.fillPoly(window_img, np.int_([left_line_pts]), (0, 255, 0))
-        cv2.fillPoly(window_img, np.int_([right_line_pts]), (0, 255, 0))
-        result = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
+        # out_img = np.dstack((binary_warped, binary_warped, binary_warped)) * 255
+        # window_img = np.zeros_like(out_img)
+        # # Color in left and right line pixels
+        # out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+        # out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+        #
+        # # Generate a polygon to illustrate the search window area
+        # # And recast the x and y points into usable format for cv2.fillPoly()
+        # left_line_window1 = np.array([np.transpose(np.vstack([left_fitx - margin, ploty]))])
+        # left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([left_fitx + margin,
+        #                                                                 ploty])))])
+        # left_line_pts = np.hstack((left_line_window1, left_line_window2))
+        # right_line_window1 = np.array([np.transpose(np.vstack([right_fitx - margin, ploty]))])
+        # right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([right_fitx + margin,
+        #                                                                  ploty])))])
+        # right_line_pts = np.hstack((right_line_window1, right_line_window2))
+        #
+        # # Draw the lane onto the warped blank image
+        # cv2.fillPoly(window_img, np.int_([left_line_pts]), (0, 255, 0))
+        # cv2.fillPoly(window_img, np.int_([right_line_pts]), (0, 255, 0))
+        # result = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
 
         # Plot the polynomial lines onto the image
-        plt.plot(left_fitx, ploty, color='yellow')
-        plt.plot(right_fitx, ploty, color='yellow')
+        # plt.plot(left_fitx, ploty, color='yellow')
+        # plt.plot(right_fitx, ploty, color='yellow')
         ## End visualization steps ##
-        out_img = plot_back_to_orig(left_fitx, right_fitx, ploty)
+        #out_img = plot_back_to_orig(left_fitx, right_fitx, ploty)
     else:
         from util.Utils import find_lane_boundary
-        GlobalVar().set_idx(0)
-        out_img, left_fitx, right_fitx = find_lane_boundary(binary_warped)
+        # GlobalVar().set_idx(0)
+        # from util.sliding_window import fit_polynomial
+        # out_img, left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty  = fit_polynomial(binary_warped)
 
-    return out_img, left_fitx, right_fitx
+    return left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty
 
 
 # Run image through the pipeline

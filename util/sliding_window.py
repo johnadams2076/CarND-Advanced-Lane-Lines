@@ -101,6 +101,7 @@ def fit_polynomial(binary_warped):
     left_fit = np.polyfit(lefty, leftx , 2)
     right_fit = np.polyfit(righty, rightx, 2)
 
+
     # Generate x and y values for plotting
     ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
     try:
@@ -121,8 +122,8 @@ def fit_polynomial(binary_warped):
     # plt.plot(left_fitx, ploty, color='yellow')
     # plt.plot(right_fitx, ploty, color='yellow')
 
-    out_img = plot_back_to_orig(left_fitx, right_fitx, ploty)
-    return out_img, left_fitx, right_fitx
+    #out_img = plot_back_to_orig(left_fitx, right_fitx, ploty)
+    return left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty
 
 # out_img = fit_polynomial(binary_warped)
 #

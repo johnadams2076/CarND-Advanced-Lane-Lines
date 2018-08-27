@@ -9,6 +9,8 @@ class Line():
         self.recent_xfitted = []
         #average x values of the fitted line over the last n iterations
         self.bestx = None
+        # x value for the most recent fit
+        self.current_fitx = None
         #polynomial coefficients averaged over the last n iterations
         self.best_fit = None
         #polynomial coefficients for the most recent fit
