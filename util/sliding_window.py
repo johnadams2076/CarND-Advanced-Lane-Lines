@@ -9,6 +9,8 @@ import cv2
 from util.Utils import plot_back_to_orig
 from util.global_variables import GlobalVar
 
+# Find lane pixels
+
 
 def find_lane_pixels(binary_warped):
     # Take a histogram of the bottom half of the image
@@ -92,6 +94,8 @@ def find_lane_pixels(binary_warped):
 
     return leftx, lefty, rightx, righty, out_img
 
+# Fit Polynomial
+
 
 def fit_polynomial(binary_warped):
     # Find our lane pixels first
@@ -113,17 +117,19 @@ def fit_polynomial(binary_warped):
         left_fitx = (1 * ploty ** 2 + 1 * ploty)
         right_fitx = (1 * ploty ** 2 + 1 * ploty)
 
-    ## Visualization ##
-    # Colors in the left and right lane regions
-    # out_img[lefty, leftx] = [255, 0, 0]
-    # out_img[righty, rightx] = [0, 0, 255]
-    #
-    # # Plots the left and right polynomials on the lane lines
-    # plt.plot(left_fitx, ploty, color='yellow')
-    # plt.plot(right_fitx, ploty, color='yellow')
+        ## Visualization ##
+        # Colors in the left and right lane regions
+        out_img[lefty, leftx] = [255, 0, 0]
+        out_img[righty, rightx] = [0, 0, 255]
+        #
+        # # Plots the left and right polynomials on the lane lines
+        plt.plot(left_fitx, ploty, color='yellow')
+        plt.plot(right_fitx, ploty, color='yellow')
+        #plt.imshow(out_img)
+        #plt.show()
 
     #out_img = plot_back_to_orig(left_fitx, right_fitx, ploty)
-    return left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty
+    return left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty, out_img
 
 # out_img = fit_polynomial(binary_warped)
 #

@@ -13,7 +13,7 @@ from util.global_variables import GlobalVar
 skipcount = 0
 text = ""
 
-
+## Sanity check to ensure detected lines are actual lanes.
 def is_santiycheck_ok(imgshape, left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty , left_curverad, right_curverad):
     has_passed = True
 
@@ -49,7 +49,7 @@ def is_santiycheck_ok(imgshape, left_fit, right_fit, left_fitx, right_fitx, left
     has_passed &= (5 >= np.abs(slope_left) >= 0.1)  &  (5 >= np.abs(slope_right) >= 0.1) & (np.abs(slope_left - slope_right) <= 6)
     return has_passed
 
-
+## Retrieve last stoted values of lines.
 def get_last_conf_vals():
     average_left_fitx = []
     average_right_fitx = []
@@ -71,7 +71,7 @@ def get_last_conf_vals():
 
     return average_left_fit, average_right_fit, average_left_fitx, average_right_fitx, left_curverad, right_curverad, offset
 
-
+## The main pipeline to process images.
 def pipeline(img):
     # Get undistorted image
     out_img = img
@@ -79,7 +79,7 @@ def pipeline(img):
     undistorted_img = get_undistorted_image(img)
     thresh_bin_img = get_threshold_binary_image(undistorted_img)
     warped_img = apply_perspective(thresh_bin_img)
-    left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty = find_lane_boundary(warped_img)
+    left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty, out_img = find_lane_boundary(warped_img)
     from util.radius_curve import measure_curvature_real
     left_curverad, right_curverad = measure_curvature_real(warped_img, left_fitx, right_fitx)
     average_left_fitx = left_fitx
@@ -122,7 +122,7 @@ def pipeline(img):
         # print(left_curverad, 'm', right_curverad, 'm', '\n')
     return out_img
 
-
+## Initialize the lines.
 def initialize_lines(left_fit, left_fitx, leftx, lefty, right_fit, right_fitx, rightx, righty):
     left_line = Line()
     right_line = Line()
@@ -136,27 +136,31 @@ def initialize_lines(left_fit, left_fitx, leftx, lefty, right_fit, right_fitx, r
     right_line.current_fitx = right_fitx
     return left_line, right_line
 
-
+## Annotate curvature and offset values on the image.
 def annotate_vals(left_curverad, offset, out_img, right_curverad):
     float_formatter = lambda x: "%.2f" % x
-    global skipcount, text
+    global skipcount, text, offset_text
     if (skipcount % 2 == 0):
-        text = "(" + str(float_formatter(right_curverad)) + "m" + ", " + str(
-            float_formatter(left_curverad)) + "m" + ") - " + str(float_formatter(offset)) + "m"
+        if(offset <= 0):
+                offset_text = "Offset left (" + str(float_formatter(np.abs(offset))) + "m)"
+        else:
+                offset_text = "Offset right (" + str(float_formatter(offset)) + "m)"
+        text = "Radius of curvature (" + str(float_formatter(left_curverad)) + "m" + ", " + str(
+            float_formatter(right_curverad)) + "m" + ")   " + offset_text
     cv2.putText(out_img, text, (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1,
                 (255, 255, 255), 1, lineType=cv2.LINE_AA)
     skipcount += 1
 
-
+# Calculate offset from center of lane.
 def calculate_offset(img, left_fitx, right_fitx):
     lane_midpoint = ((np.nanmax(right_fitx) - np.nanmin(left_fitx)) / 2) + np.nanmin(left_fitx)
     xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
-    offset = np.abs(img.shape[1] // 2 - lane_midpoint) * xm_per_pix
+    offset = (img.shape[1] // 2 - lane_midpoint) * xm_per_pix
     offsetLeftLine = np.abs(img.shape[1] // 2 - np.nanmin(left_fitx)) * xm_per_pix
     offsetRightLine = np.abs(img.shape[1] // 2 - np.nanmax(right_fitx)) * xm_per_pix
     return offset, offsetLeftLine, offsetRightLine
 
-
+#  Process lines data and calculate averages.
 def process_lines(left_fit, left_fitx, left_line, right_fit, right_fitx, right_line):
     left_lines = GlobalVar().left_lines
     recent_xfitted = []
@@ -193,10 +197,3 @@ def process_lines(left_fit, left_fitx, left_line, right_fit, right_fitx, right_l
         right_line.bestx = average_right_fitx
         right_line.diffs = fit_diifs
     return average_left_fit, average_right_fit, average_left_fitx, average_right_fitx
-
-# performs the camera calibration, image distortion correction and
-# returns the undistorted image
-
-
-#from util.Utils import get_undistorted_image, get_threshold_binary_image, apply_perspective, find_lane_boundary
-

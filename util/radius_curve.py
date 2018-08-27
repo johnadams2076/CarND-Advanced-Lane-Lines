@@ -63,6 +63,8 @@ def measure_curvature_real_dat(left_fit_cr, right_fit_cr):
     return left_curverad, right_curverad
 
 
+# Measure radius and curvature.
+
 def measure_curvature_real(image, left_fitx, right_fitx):
     '''
     Calculates the curvature of polynomial functions in meters.

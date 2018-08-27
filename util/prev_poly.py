@@ -14,6 +14,8 @@ from util.Utils import plot_back_to_orig
 from util.global_variables import GlobalVar
 
 
+# Fit Polynomial
+
 
 def fit_poly(img_shape, leftx, lefty, rightx, righty):
     ### TO-DO: Fit a second order polynomial to each with np.polyfit() ###
@@ -33,6 +35,8 @@ def fit_poly(img_shape, leftx, lefty, rightx, righty):
         right_fitx = (1 * ploty ** 2 + 1 * ploty)
 
     return left_fit, right_fit, left_fitx, right_fitx, ploty
+
+# Look ahead filter
 
 
 def search_around_poly(binary_warped, left_fit, right_fit):

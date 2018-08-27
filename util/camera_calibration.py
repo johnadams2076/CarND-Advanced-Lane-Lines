@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 
 # Camera calibration and storing values in pickle
+# Prepare data for camera calibration
 def prepareCalibrationInputs():
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
     objp = np.zeros((6 * 9, 3), np.float32)

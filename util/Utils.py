@@ -19,8 +19,9 @@ def get_threshold_binary_image(img):
     grady = apply_abs_sobel_thresh(img, orient='y', sobel_kernel=3, thresh=(20, 100))
     mag_binary = apply_mag_thresh(img, sobel_kernel=9, mag_thresh=(30, 100))
     dir_binary = apply_dir_threshold(img, sobel_kernel=15, thresh=(0.7, 1.3))
-    combined = np.zeros_like(dir_binary)
-    combined[(gradx == 1) & (grady == 1) | ((mag_binary == 1) & (dir_binary == 1))] = 1
+    color_transform_binary = apply_color_transform(img, s_thresh=(170, 255), sx_thresh=(20, 100))
+    combined = np.zeros_like(color_transform_binary)
+    combined[((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1)) | (color_transform_binary == 1)] = 1
     return combined
 
 
@@ -79,6 +80,8 @@ def apply_dir_threshold(img, sobel_kernel=3, thresh=(0, np.pi / 2)):
     binary_output[(dir_grad >= thresh[0]) & (dir_grad <= thresh[1])] = 1
     return binary_output
 
+# Apply the S channel threshold
+
 
 def apply_color_transform(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     # Convert to HLS color space and separate the V channel
@@ -91,6 +94,8 @@ def apply_color_transform(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
 
     return s_binary
 
+# Apply warp perspective to get a bird's eye view.
+
 
 def apply_perspective(img):
     global src, dst
@@ -100,6 +105,7 @@ def apply_perspective(img):
     warped = cv2.warpPerspective(img, M, (img.shape[1], img.shape[0]), flags=cv2.INTER_NEAREST)
     return warped
 
+# Check if lane was detected in the past n iterations.
 
 def is_lane_detected():
     ret_bool = True
@@ -111,13 +117,15 @@ def is_lane_detected():
             ret_bool |= line_bool
     return ret_bool
 
+# Find lane boundary
+
 
 def find_lane_boundary(img):
 
     from util.sliding_window import fit_polynomial
     #left_fitx = right_fitx = leftx = lefty = rightx = righty = []
     if (GlobalVar().get_idx() <= 0) | (not is_lane_detected()) | bool(np.array(GlobalVar().get_left_fit()).any()) & bool(np.array(GlobalVar().get_right_fit()).any()):
-        left_fit, right_fit, left_fitx, right_fitx , leftx, lefty, rightx, righty = fit_polynomial(img)
+        left_fit, right_fit, left_fitx, right_fitx , leftx, lefty, rightx, righty, out_img = fit_polynomial(img)
         GlobalVar().set_left_fit(left_fit)
         GlobalVar().set_right_fit(right_fit)
     elif GlobalVar().get_left_fit().shape[0] == img.shape[0]:
@@ -126,7 +134,7 @@ def find_lane_boundary(img):
     GlobalVar().set_idx(GlobalVar().get_idx() + 1)
 
     # win_center_img = find_window_centroids(img)
-    return GlobalVar().get_left_fit(),  GlobalVar().get_right_fit(), left_fitx, right_fitx, leftx, lefty, rightx, righty
+    return GlobalVar().get_left_fit(),  GlobalVar().get_right_fit(), left_fitx, right_fitx, leftx, lefty, rightx, righty, out_img
 
 
 def get_curve_pos():
@@ -135,6 +143,7 @@ def get_curve_pos():
 
     # Read in the saved objpoints and imgpoints
 
+# Plot the lanes back to the original image using a polygon.
 
 def plot_back_to_orig(left_fitx, right_fitx, ploty):
     # Create an image to draw the lines on

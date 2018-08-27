@@ -12,7 +12,7 @@ def singleton(cls):
     return getinstance
 
 
-
+# Maintain only one instance of the global variable class
 @singleton
 class GlobalVar:
 
@@ -41,7 +41,7 @@ class GlobalVar:
         self.offset = 0.0
         self.left_lines = collections.deque(maxlen=25)
         self.right_lines = collections.deque(maxlen=25)
-        self.line_detected = collections.deque(maxlen=10)
+        self.line_detected = collections.deque(maxlen=5)
 
 
     def set_idx(self, idx):
