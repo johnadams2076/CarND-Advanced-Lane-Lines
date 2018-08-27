@@ -102,10 +102,11 @@ def apply_perspective(img):
 
 
 def is_lane_detected():
-    ret_bool = False
+    ret_bool = True
 
-    if (GlobalVar().get_idx() % GlobalVar().get_line_detected().maxlen) == 0:
-        line_detected = GlobalVar().get_line_detected()
+    if ((GlobalVar().get_idx()) % (GlobalVar().line_detected.maxlen)) == 0:
+        line_detected = GlobalVar().line_detected
+        ret_bool = False
         for line_bool in line_detected:
             ret_bool |= line_bool
     return ret_bool
@@ -114,10 +115,12 @@ def is_lane_detected():
 def find_lane_boundary(img):
 
     from util.sliding_window import fit_polynomial
-
-    if GlobalVar().get_idx() <= 0 & (not is_lane_detected()):
+    #left_fitx = right_fitx = leftx = lefty = rightx = righty = []
+    if (GlobalVar().get_idx() <= 0) | (not is_lane_detected()) | bool(np.array(GlobalVar().get_left_fit()).any()) & bool(np.array(GlobalVar().get_right_fit()).any()):
         left_fit, right_fit, left_fitx, right_fitx , leftx, lefty, rightx, righty = fit_polynomial(img)
-    else:
+        GlobalVar().set_left_fit(left_fit)
+        GlobalVar().set_right_fit(right_fit)
+    elif GlobalVar().get_left_fit().shape[0] == img.shape[0]:
         from util.prev_poly import search_around_poly
         left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty = search_around_poly(img, GlobalVar().get_left_fit(),  GlobalVar().get_right_fit())
     GlobalVar().set_idx(GlobalVar().get_idx() + 1)

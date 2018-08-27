@@ -63,7 +63,7 @@ def search_around_poly(binary_warped, left_fit, right_fit):
     rightx = nonzerox[right_lane_inds]
     righty = nonzeroy[right_lane_inds]
 
-    if (not ((leftx.size <= 0 or lefty.size <= 0 or rightx.size <= 0 or righty.size <= 0 ))):
+    if (not ((leftx.size == 0 or lefty.size == 0 or rightx.size == 0 or righty.size == 0 ))):
 
         # Fit new polynomials
         left_fit, right_fit, left_fitx, right_fitx, ploty = fit_poly(binary_warped.shape, leftx, lefty, rightx, righty)

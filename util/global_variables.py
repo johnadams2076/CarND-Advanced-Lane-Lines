@@ -38,16 +38,11 @@ class GlobalVar:
         self.src = []
         self.dst = []
         self.orig_image = []
-        self.offset = 0
+        self.offset = 0.0
         self.left_lines = collections.deque(maxlen=25)
         self.right_lines = collections.deque(maxlen=25)
         self.line_detected = collections.deque(maxlen=10)
 
-    def set_line_detected(self, line_detected):
-        self.line_detected = line_detected
-
-    def get_line_detected(self):
-        return self.line_detected
 
     def set_idx(self, idx):
         self.idx = idx

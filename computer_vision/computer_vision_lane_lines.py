@@ -14,15 +14,18 @@ skipcount = 0
 text = ""
 
 
-def is_santiycheck_ok(imgshape, leftx, lefty, rightx, righty , left_fitx, right_fitx, left_curverad, right_curverad):
+def is_santiycheck_ok(imgshape, left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty , left_curverad, right_curverad):
     has_passed = True
+
+    #check values
+    has_passed &= bool(np.array(left_fit).any()) & bool(np.array(right_fit).any())
     #check curvature
     #has_passed = has_passed & (np.abs(right_curverad - left_curverad) <= 1000)
     # check distance
     maxdist = (np.nanmax(right_fitx) - np.nanmin(left_fitx))
-    has_passed &= (maxdist > 0) & (maxdist <= 950)
+    has_passed &= (maxdist > 0) & (maxdist <= imgshape[1])
     mindist = (np.nanmin(right_fitx) - np.nanmax(left_fitx))
-    has_passed &= (mindist > 0) & (mindist <= 100)
+    has_passed &= (mindist > 0) & (mindist <= 600)
 
     min_y = imgshape[0] // 2
     max_y = imgshape[0]
@@ -56,15 +59,17 @@ def get_last_conf_vals():
         left_lane = GlobalVar().left_lines[len(GlobalVar().left_lines) - 1]
         left_curverad = left_lane.radius_of_curvature
         average_left_fitx = left_lane.bestx
+        average_left_fit = left_lane.best_fit
 
     if len(GlobalVar().right_lines) > 0:
         right_lane = GlobalVar().right_lines[len(GlobalVar().right_lines) - 1]
         right_curverad = right_lane.radius_of_curvature
         average_right_fitx = right_lane.bestx
+        average_right_fit = right_lane.best_fit
 
     offset = GlobalVar().get_offset()
 
-    return average_left_fitx, average_right_fitx, left_curverad, right_curverad, offset
+    return average_left_fit, average_right_fit, average_left_fitx, average_right_fitx, left_curverad, right_curverad, offset
 
 
 def pipeline(img):
@@ -77,11 +82,13 @@ def pipeline(img):
     left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty = find_lane_boundary(warped_img)
     from util.radius_curve import measure_curvature_real
     left_curverad, right_curverad = measure_curvature_real(warped_img, left_fitx, right_fitx)
+    average_left_fitx = left_fitx
+    average_right_fitx = right_fitx
     offset = 0.0
-    average_left_fit = left_fitx
-    average_right_fit = right_fitx
+    average_left_fit = left_fit
+    average_right_fit = right_fit
 
-    if is_santiycheck_ok(img.shape, leftx, lefty, rightx, righty, left_fitx, right_fitx, left_curverad, right_curverad):
+    if is_santiycheck_ok(img.shape, left_fit, right_fit, left_fitx, right_fitx, leftx, lefty, rightx, righty,left_curverad, right_curverad):
 
         left_line, right_line = initialize_lines(left_fit, left_fitx, leftx, lefty, right_fit, right_fitx, rightx,
                                                  righty)
@@ -95,22 +102,22 @@ def pipeline(img):
         left_line.radius_of_curvature = left_curverad
         right_line.radius_of_curvature = right_curverad
 
-        average_left_fit, average_right_fit = process_lines(left_fit, left_line, right_fit, right_line)
-        GlobalVar().set_left_fit(average_left_fit)
-        GlobalVar().set_right_fit(average_right_fit)
-        GlobalVar().set_line_detected(GlobalVar().get_line_detected().append(True))
+        average_left_fit, average_right_fit, average_left_fitx, average_right_fitx = process_lines(left_fit, left_fitx, left_line, right_fit, right_fitx, right_line)
+        GlobalVar().line_detected.append(True)
 
         GlobalVar().left_lines.append(left_line)
         GlobalVar().right_lines.append(right_line)
 
     elif (len(GlobalVar().left_lines) > 0) & (len(GlobalVar().right_lines) > 0) :
-        average_left_fit, average_right_fit, left_curverad, right_curverad, offset = get_last_conf_vals()
+        average_left_fit, average_right_fit, average_left_fitx, average_right_fitx, left_curverad, right_curverad, offset = get_last_conf_vals()
 
     ploty = np.linspace(0, img.shape[0] - 1, img.shape[0])
-
-    if (np.array(average_left_fit).any() ):
-        out_img = plot_back_to_orig(average_left_fit, average_right_fit, ploty)
-        annotate_vals(left_curverad, offset, out_img, right_curverad)
+    GlobalVar().set_left_fit(average_left_fit)
+    GlobalVar().set_right_fit(average_right_fit)
+    if bool(np.array(average_left_fitx).any()) & bool(np.array(average_right_fitx).any()):
+        offset = GlobalVar().offset
+        out_img = plot_back_to_orig(average_left_fitx, average_right_fitx, ploty)
+        annotate_vals(left_curverad,  offset, out_img, right_curverad)
 
         # print(left_curverad, 'm', right_curverad, 'm', '\n')
     return out_img
@@ -150,17 +157,19 @@ def calculate_offset(img, left_fitx, right_fitx):
     return offset, offsetLeftLine, offsetRightLine
 
 
-def process_lines(left_fit, left_line, right_fit, right_line):
+def process_lines(left_fit, left_fitx, left_line, right_fit, right_fitx, right_line):
     left_lines = GlobalVar().left_lines
     recent_xfitted = []
     recent_polycoeff = []
     average_left_fit = left_fit
+    average_left_fitx = left_fitx
+    average_right_fitx = right_fitx
     if (len(left_lines) > 0):
         for temp_line in left_lines:
             recent_xfitted.append(temp_line.current_fitx)
             recent_polycoeff.append(temp_line.current_fit)
 
-        average_left_fitx = np.mean(recent_xfitted[0])
+        average_left_fitx = np.mean(recent_xfitted,  axis=0, keepdims=True)
         if len(recent_polycoeff) > 1:
             average_left_fit = np.mean(recent_polycoeff, axis=0, keepdims=False)
         fit_diifs = np.subtract(left_fit, recent_polycoeff[len(recent_polycoeff) - 1])
@@ -176,14 +185,14 @@ def process_lines(left_fit, left_line, right_fit, right_line):
         for temp_line in right_lines:
             recent_xfitted.append(temp_line.current_fitx)
             recent_polycoeff.append(temp_line.current_fit)
-        average_right_fitx = np.average(recent_xfitted[0])
+        average_right_fitx = np.mean(recent_xfitted, axis=0, keepdims=True)
         if len(recent_polycoeff) > 1:
             average_right_fit = np.mean(recent_polycoeff, axis=0, keepdims=False)
         fit_diifs = np.subtract(right_fit, recent_polycoeff[len(recent_polycoeff) - 1])
         right_line.best_fit = average_right_fit
         right_line.bestx = average_right_fitx
         right_line.diffs = fit_diifs
-    return average_left_fit, average_right_fit
+    return average_left_fit, average_right_fit, average_left_fitx, average_right_fitx
 
 # performs the camera calibration, image distortion correction and
 # returns the undistorted image
